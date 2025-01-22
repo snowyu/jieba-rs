@@ -269,33 +269,6 @@ impl Jieba {
         Ok(instance)
     }
 
-    /// Clears all data
-    ///
-    /// This method performs the following actions:
-    /// 1. Clears the `records` list, removing all entries.
-    /// 2. Resets `cedar` to a new instance of `Cedar`.
-    /// 3. Sets `total` to 0, resetting the count.
-    ///
-    /// # Arguments
-    ///
-    /// * `&mut self` - Mutable reference to the current instance.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use jieba_rs::Jieba;
-    ///
-    /// let mut instance = Jieba::new();
-    /// assert!(instance.has_word("我们"), "The word '我们' should be in the dictionary after loading the default dictionary");
-    /// instance.clear(); // clear all dict data
-    /// assert!(!instance.has_word("我们"), "The word '我们' should not be in the dictionary after clearing the dictionary");
-    /// ```
-    pub fn clear(&mut self) {
-        self.records.clear();
-        self.cedar = Cedar::new();
-        self.total = 0;
-    }
-
     /// Loads the default dictionary into the instance.
     ///
     /// This method reads the default dictionary from a predefined byte slice (`DEFAULT_DICT`)
@@ -324,17 +297,31 @@ impl Jieba {
         self.load_dict(&mut default_dict).unwrap();
     }
 
-    /// Checks if a word exists in the dictionary.
+    /// Clears all data
+    ///
+    /// This method performs the following actions:
+    /// 1. Clears the `records` list, removing all entries.
+    /// 2. Resets `cedar` to a new instance of `Cedar`.
+    /// 3. Sets `total` to 0, resetting the count.
     ///
     /// # Arguments
     ///
-    /// * `word` - The word to check.
+    /// * `&mut self` - Mutable reference to the current instance.
     ///
-    /// # Returns
+    /// # Examples
     ///
-    /// * `bool` - Whether the word exists in the dictionary.
-    pub fn has_word(&self, word: &str) -> bool {
-        self.cedar.exact_match_search(word).is_some()
+    /// ```
+    /// use jieba_rs::Jieba;
+    ///
+    /// let mut instance = Jieba::new();
+    /// assert!(instance.has_word("我们"), "The word '我们' should be in the dictionary after loading the default dictionary");
+    /// instance.clear(); // clear all dict data
+    /// assert!(!instance.has_word("我们"), "The word '我们' should not be in the dictionary after clearing the dictionary");
+    /// ```
+    pub fn clear(&mut self) {
+        self.records.clear();
+        self.cedar = Cedar::new();
+        self.total = 0;
     }
 
     /// Remove a word from the dictionary
@@ -426,12 +413,23 @@ impl Jieba {
         freq
     }
 
+    /// Checks if a word exists in the dictionary.
+    ///
+    /// # Arguments
+    ///
+    /// * `word` - The word to check.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - Whether the word exists in the dictionary.
+    pub fn has_word(&self, word: &str) -> bool {
+        self.cedar.exact_match_search(word).is_some()
+    }
+
     /// Loads a dictionary by adding entries to the existing dictionary rather than resetting it.
     ///
     /// This function reads from a `BufRead` source, parsing each line as a dictionary entry. Each entry
-    /// is expected to contain a word, its frequency, and optionally a tag. The function updates the
-    /// internal data structures (`cedar`, `records`) with these entries, ensuring that the longest word
-    /// length and total frequency are correctly maintained.
+    /// is expected to contain a word, its frequency, and optionally a tag.
     ///
     /// # Type Parameters
     ///
@@ -451,7 +449,6 @@ impl Jieba {
     /// This function will return an error if:
     /// * There is an issue reading from the provided `BufRead` source.
     /// * A line in the dictionary file contains invalid frequency data (not a valid integer).
-    ///
     pub fn load_dict<R: BufRead>(&mut self, dict: &mut R) -> Result<(), Error> {
         let mut buf = String::new();
         self.total = 0;
@@ -956,6 +953,14 @@ mod tests {
     #[test]
     fn test_init_with_default_dict() {
         let _ = Jieba::new();
+    }
+
+    #[test]
+    fn test_has_word() {
+        let jieba = Jieba::new();
+        assert!(jieba.has_word("中国"));
+        assert!(jieba.has_word("开源"));
+        assert!(!jieba.has_word("不存在的词"));
     }
 
     #[test]
