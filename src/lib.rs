@@ -233,6 +233,7 @@ pub struct Jieba {
     records: Vec<Record>,
     cedar: Cedar,
     total: usize,
+    deleted: usize,
 }
 
 #[cfg(feature = "default-dict")]
@@ -249,6 +250,7 @@ impl Jieba {
             records: Vec::new(),
             cedar: Cedar::new(),
             total: 0,
+            deleted: 0,
         }
     }
 
@@ -322,6 +324,7 @@ impl Jieba {
         self.records.clear();
         self.cedar = Cedar::new();
         self.total = 0;
+        self.deleted = 0;
     }
 
     /// Remove a word from the dictionary
@@ -359,6 +362,7 @@ impl Jieba {
             self.cedar.erase(word);
             self.records[word_id].mark_deleted();
             self.total -= freq;
+            self.deleted += 1;
             true
         } else {
             false
@@ -367,6 +371,9 @@ impl Jieba {
 
     /// Find the last deleted word_id
     fn find_last_deleted(&self) -> Option<usize> {
+        if self.deleted == 0 {
+            return None;
+        }
         for (i, record) in self.records.iter().enumerate().rev() {
             if record.deleted {
                 return Some(i);
@@ -397,6 +404,7 @@ impl Jieba {
             }
             None => {
                 let word_id = if let Some(id) = self.find_last_deleted() {
+                    self.deleted -= 1;
                     self.records[id] = Record::new(freq, String::from(tag));
                     id
                 } else {
